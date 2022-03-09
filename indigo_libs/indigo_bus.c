@@ -449,7 +449,7 @@ indigo_result indigo_detach_device(indigo_device *device) {
 		}
 	}
 	pthread_mutex_unlock(&device_mutex);
-	return INDIGO_OK;
+	return INDIGO_NOT_FOUND;
 }
 
 indigo_result indigo_detach_client(indigo_client *client) {
@@ -467,7 +467,7 @@ indigo_result indigo_detach_client(indigo_client *client) {
 		}
 	}
 	pthread_mutex_unlock(&client_mutex);
-	return INDIGO_OK;
+	return INDIGO_NOT_FOUND;
 }
 
 indigo_result indigo_enumerate_properties(indigo_client *client, indigo_property *property) {
@@ -727,17 +727,21 @@ indigo_result indigo_stop() {
 	pthread_mutex_lock(&client_mutex);
 	INDIGO_TRACE(indigo_trace("INDIGO Bus: stop request"));
 	if (is_started) {
-		is_started = false;
 		for (int i = 0; i < MAX_CLIENTS; i++) {
 			indigo_client *client = clients[i];
-			if (client != NULL && client->detach != NULL)
+			if (client != NULL && client->detach != NULL) {
+				clients[i] = NULL;
 				client->last_result = client->detach(client);
+			}
 		}
 		for (int i = 0; i < MAX_DEVICES; i++) {
 			indigo_device *device = devices[i];
-			if (device != NULL && device->detach != NULL)
+			if (device != NULL && device->detach != NULL) {
+				devices[i] = NULL;
 				device->last_result = device->detach(device);
+			}
 		}
+		is_started = false;
 	}
 	pthread_mutex_unlock(&client_mutex);
 	pthread_mutex_unlock(&device_mutex);
@@ -1523,6 +1527,23 @@ indigo_result indigo_device_disconnect(indigo_client *client, char *device) {
 	static const char *items[] = { CONNECTION_CONNECTED_ITEM_NAME, CONNECTION_DISCONNECTED_ITEM_NAME };
 	static bool values[] = { false, true };
 	return indigo_change_switch_property(client, device, CONNECTION_PROPERTY_NAME, 2, items, values);
+}
+
+int indigo_query_slave_devices(indigo_device *master, indigo_device **slaves, int max) {
+	if (indigo_use_strict_locking)
+		pthread_mutex_lock(&device_mutex);
+	int count = 0;
+	for (int i = 0; i < MAX_DEVICES; i++) {
+		indigo_device *device = devices[i];
+		if (device && device != master && device->master_device == master) {
+			slaves[count] = device;
+			if (count++ >= max)
+				break;
+		}
+	}
+	if (indigo_use_strict_locking)
+		pthread_mutex_unlock(&device_mutex);
+	return count;
 }
 
 void indigo_trim_local_service(char *device_name) {

@@ -439,6 +439,12 @@ static indigo_device server_device = INDIGO_DEVICE_INITIALIZER(
 	detach
 );
 
+/**
+ * @brief Translate the give hour to a degree (of -180..180°)
+ * 
+ * @param ra Value of time 0 .. 24 hours
+ * @return double -180 .. 180 degree
+ */
 static double h2deg(double ra) {
 	return ra > 12 ? (ra - 24) * 15 : ra * 15;
 }

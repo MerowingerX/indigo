@@ -26,7 +26,7 @@
  \file indigo_ccd_asi.c
  */
 
-#define DRIVER_VERSION 0x001D
+#define DRIVER_VERSION 0x001E
 #define DRIVER_NAME "indigo_ccd_asi"
 
 #include <stdlib.h>
@@ -566,11 +566,13 @@ static void streaming_timer_callback(indigo_device *device) {
 	}
 	PRIVATE_DATA->can_check_temperature = true;
 	indigo_finalize_video_stream(device);
-	if (res)
+	if (res) {
 		CCD_STREAMING_PROPERTY->state = INDIGO_ALERT_STATE;
-	else
+		indigo_update_property(device, CCD_STREAMING_PROPERTY, "Streaming failed");
+	} else {
 		CCD_STREAMING_PROPERTY->state = INDIGO_OK_STATE;
-	indigo_update_property(device, CCD_STREAMING_PROPERTY, NULL);
+		indigo_update_property(device, CCD_STREAMING_PROPERTY, NULL);
+	}
 }
 
 // callback called 4s before image download (e.g. to clear vreg or turn off temperature check)
@@ -1691,7 +1693,7 @@ static void process_plug_event(indigo_device *unused) {
 	private_data->dev_id = id;
 	memcpy(&(private_data->info), &info, sizeof(ASI_CAMERA_INFO));
 	device->private_data = private_data;
-	indigo_async((void *)(void *)indigo_attach_device, device);
+	indigo_attach_device(device);
 	devices[slot]=device;
 	if (info.ST4Port) {
 		slot = find_available_device_slot();
@@ -1705,7 +1707,7 @@ static void process_plug_event(indigo_device *unused) {
 		sprintf(device->name, "%s Guider #%d", info.Name, id);
 		INDIGO_DEVICE_ATTACH_LOG(DRIVER_NAME, device->name);
 		device->private_data = private_data;
-		indigo_async((void *)(void *)indigo_attach_device, device);
+		indigo_attach_device(device);
 		devices[slot]=device;
 	}
 	pthread_mutex_unlock(&device_mutex);

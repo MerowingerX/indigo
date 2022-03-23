@@ -45,25 +45,51 @@ set (IndigoLibraryFiles
  ${CMAKE_SOURCE_DIR}/indigo_libs/indigo_wheel_driver.c
  ${CMAKE_SOURCE_DIR}/indigo_libs/indigo_xml.c
 ) 
- 
+
+set (libnova_src 
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/checkout-mp.c
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/checkout-stars.c  
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/eph_manager.c  
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/novas.c     
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/nutation.c  
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/solsys1.c  
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/solsys3.c
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/checkout-stars-full.c  
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/cio_file.c 
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/novascon.c
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/readeph0.c
+    ${CMAKE_SOURCE_DIR}/indigo_libs/externals/novas/solsys2.c
+    )
  # add the executable
 add_executable(IndigoServer 
     ${IndigoServerFiles}
-    ${IndigoLibraryFiles}
     )
+
+add_library(IndigoLibs 
+    ${IndigoLibraryFiles}
+)
+
+add_library(IndigoNovas 
+    ${libnova_src}
+    )
+
+target_link_libraries(IndigoServer
+    ${LIBDIR}/libusb-1.0.a
+    ${CMAKE_CURRENT_BINARY_DIR}/libIndigoLibs.a
+    ${CMAKE_CURRENT_BINARY_DIR}/libIndigoNovas.a
+    
+)
 
 #set the include directories
 target_include_directories(IndigoServer PUBLIC 
-    ${PROJECT_SOURCE_DIR}/indigo_server
-    ${PROJECT_SOURCE_DIR}/indigo_drivers
-    ${PROJECT_SOURCE_DIR}/indigo_libs
-    ${PROJECT_SOURCE_DIR}/indigo_libs/externals/novas
-    #${PROJECT_SOURCE_DIR}/indigo_libs/externals/libjpeg
-    ${PROJECT_SOURCE_DIR}/indigo_libs/externals/hidapi
-    #${PROJECT_SOURCE_DIR}/indigo_libs/externals/libtiff
-    #${PROJECT_SOURCE_DIR}/indigo_libs/externals/libusb
-    ${PROJECT_SOURCE_DIR}/indigo_linux_drivers
     )
+
+target_include_directories(IndigoNovas PUBLIC 
+    )
+
+target_include_directories(IndigoLibs PUBLIC 
+    )
+
 
 function (cat_and_zip datafile)
   set(datafile_data ${datafile}_data )

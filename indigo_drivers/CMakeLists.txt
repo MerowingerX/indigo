@@ -1,1 +1,1 @@
-add_subdirectory(ccd_svb)
+add_subdirectory(ccd_svb305pro)
